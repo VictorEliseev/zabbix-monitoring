@@ -1,0 +1,15 @@
+# Игнорируем секреты во всех вложенных папках
+**/.env
+
+# Игнорируем базы данных (чтобы не пушить гигабайты логов)
+**/zabbix/db/
+**/zabbix_proxy_db/
+**/postgres/data/
+
+# Игнорируем данные Nginx Proxy Manager
+**/nginx-proxy/data/
+**/nginx-proxy/letsencrypt/
+
+# Прочее
+.DS_Store
+*.log
