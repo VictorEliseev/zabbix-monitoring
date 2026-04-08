@@ -1,11 +1,11 @@
 services:
-  # База данных
+  # --- База данных (TimescaleDB для лучшей производительности) ---
   zabbix-db:
-    image: postgres:16-alpine
+    image: timescale/timescaledb:latest-pg16
     container_name: zabbix-db
     restart: always
     volumes:
-      - ./zabbix/db:/var/lib/postgresql/data
+      - ./zabbix-db-data:/var/lib/postgresql/data:rw
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -13,8 +13,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - TZ=${TIMEZONE}
+    env_file:
+      - .env
 
-  # Zabbix Server
+  # --- Ядро Zabbix Server ---
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
     container_name: zabbix-server
@@ -22,7 +24,7 @@ services:
     ports:
       - "10051:10051"
     volumes:
-      - ./zabbix/alertscripts:/usr/lib/zabbix/alertscripts
+      - ./zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -31,28 +33,38 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - ZBX_SERVER_NAME=${ZBX_SERVER_NAME}
+      - ZBX_CACHELINESIZE=128
       - PHP_TZ=${TIMEZONE}
+    env_file:
+      - .env
+    depends_on:
+      - zabbix-db
 
-  # Веб-интерфейс
+  # --- Веб-интерфейс (за прокси-менеджером) ---
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
     container_name: zabbix-web
     restart: always
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
       - ZBX_SERVER_HOST=zabbix-server
-      - ZBX_SERVER_NAME=${ZBX_SERVER_NAME}
       - DB_SERVER_HOST=zabbix-db
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - ZBX_SERVER_NAME=${ZBX_SERVER_NAME}
       - PHP_TZ=${TIMEZONE}
+    env_file:
+      - .env
+    depends_on:
+      - zabbix-db
+      - zabbix-server
 
-  # Прокси для доступа по домену (SSL)
+  # --- Nginx Proxy Manager (SSL и Доступ) ---
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: nginx-proxy
@@ -69,13 +81,13 @@ services:
     environment:
       - TZ=${TIMEZONE}
 
-  # Агент для мониторинга самого сервера
+  # --- Zabbix Agent (Мониторинг самого хоста) ---
   zabbix-agent:
     image: zabbix/zabbix-agent:alpine-7.0-latest
     container_name: zabbix-agent
     restart: always
     privileged: true
-    network_mode: host # Это важно, чтобы агент видел реальный сетевой интерфейс сервера
+    network_mode: host
     volumes:
       - /proc:/host/proc
       - /sys:/host/sys
@@ -84,4 +96,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
     environment:
       - ZBX_HOSTNAME=${ZBX_HOSTNAME}
-      - ZBX_SERVER_HOST=zabbix-server
+      - ZBX_SERVER_HOST=127.0.0.1
+    env_file:
+      - .env
