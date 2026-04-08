@@ -1,15 +1,30 @@
-# Игнорируем секреты во всех вложенных папках
+# Секреты
 **/.env
+**/.env.*
+!**/.env.example
 
-# Игнорируем базы данных (чтобы не пушить гигабайты логов)
+# Базы данных и данные контейнеров
 **/zabbix/db/
 **/zabbix_proxy_db/
 **/postgres/data/
+**/mysql/data/
 
-# Игнорируем данные Nginx Proxy Manager
+# Nginx & Proxy Manager
 **/nginx-proxy/data/
 **/nginx-proxy/letsencrypt/
 
-# Прочее
-.DS_Store
+# Специфично для Zabbix (сессии и конфиги)
+**/zabbix/web/
+**/zabbix/etc/
+
+# Логи и временные файлы
 *.log
+**/logs/
+tmp/
+
+# Системный мусор и редакторы
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
