@@ -1,11 +1,11 @@
 services:
-  # --- База данных (TimescaleDB для лучшей производительности) ---
+  # --- База данных (TimescaleDB для высокой производительности) ---
   zabbix-db:
     image: timescale/timescaledb:latest-pg16
     container_name: zabbix-db
     restart: always
     volumes:
-      - ./zabbix-db-data:/var/lib/postgresql/data:rw
+      - ./data/db:/var/lib/postgresql/data:rw
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -24,7 +24,7 @@ services:
     ports:
       - "10051:10051"
     volumes:
-      - ./zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
+      - ./data/zbx_env/alertscripts:/usr/lib/zabbix/alertscripts:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -40,7 +40,7 @@ services:
     depends_on:
       - zabbix-db
 
-  # --- Веб-интерфейс (за прокси-менеджером) ---
+  # --- Веб-интерфейс (доступ через NPM) ---
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
     container_name: zabbix-web
@@ -64,7 +64,7 @@ services:
       - zabbix-db
       - zabbix-server
 
-  # --- Nginx Proxy Manager (SSL и Доступ) ---
+  # --- Nginx Proxy Manager (SSL и точка входа) ---
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: nginx-proxy
@@ -74,14 +74,14 @@ services:
       - '443:443'
       - '81:81'
     volumes:
-      - ./nginx-proxy/data:/data
-      - ./nginx-proxy/letsencrypt:/etc/letsencrypt
+      - ./data/npm/data:/data
+      - ./data/npm/letsencrypt:/etc/letsencrypt
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
       - TZ=${TIMEZONE}
 
-  # --- Zabbix Agent (Мониторинг самого хоста) ---
+  # --- Zabbix Agent (Мониторинг самого сервера) ---
   zabbix-agent:
     image: zabbix/zabbix-agent:alpine-7.0-latest
     container_name: zabbix-agent
