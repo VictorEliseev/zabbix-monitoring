@@ -1,90 +1,45 @@
-Zabbix Server Deployment Guide (Cloud/On-Prem)
-This guide provides instructions for deploying the central Zabbix Server Hub using Docker, PostgreSQL with TimescaleDB, and Tailscale for secure inter-branch connectivity.
+# **Zabbix Server Deployment Guide (Cloud/On-Prem)**
 
-Overview
+This guide provides instructions for deploying the central **Zabbix Server Hub**.
+
+## **Overview**
+
 The setup consists of:
 
-Zabbix Server 7.0 (LTS): Core monitoring engine.
+* **Zabbix Server 7.0 (LTS)**: Core monitoring engine.  
+* **PostgreSQL 16 \+ TimescaleDB**: High-performance database.  
+* **Tailscale**: Secure VPN tunnel for remote connectivity.  
+* **Nginx Proxy Manager**: Reverse proxy for SSL.
 
-PostgreSQL 16 + TimescaleDB: High-performance database for time-series data.
+## **Deployment Steps**
 
-Tailscale: Secure VPN tunnel to connect remote proxies without opening public ports.
+### **1\. Prepare Environment**
 
-Nginx Proxy Manager (NPM): Reverse proxy for SSL termination and Web UI access.
-
-Zabbix Agent 2: Self-monitoring of the host resources.
-
-Prerequisites
-Before starting, ensure you have:
-
-Docker & Docker Compose installed on your host.
-
-Tailscale Auth Key: Generate a reusable or ephemeral key in your Tailscale Admin Console.
-
-Public IP & Domain (Optional): If you plan to use Nginx Proxy Manager with Let's Encrypt SSL.
-
-Deployment Steps
-1. Prepare Environment
-Clone the repository and navigate to the server directory:
-
-Bash
-cd server/
-Create your private .env file based on the provided template:
-
-Bash
+Navigate to the server directory and create .env:  
+cd server/  
 cp .env.example .env
-Edit .env and fill in your secure passwords and Tailscale Auth Key.
 
-2. Initialize the Database
-Ensure the init_timescaledb.sql file is present in the server directory. It contains the command to activate the time-series extension:
+Edit .env and fill in your passwords and **Tailscale Auth Key**.
 
-SQL
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
-3. Run the Deployment Script
-Execute the provided automation script to prepare directories and launch containers:
+### **2\. Run Deployment Script**
 
-Bash
-chmod +x deploy_server.sh
-./deploy_server.sh
-4. Verify Connectivity
-Check if the Tailscale tunnel is active and find your internal IP:
+Execute the automation script:  
+chmod \+x deploy\_server.sh  
+./deploy\_server.sh
 
-Bash
-docker exec ts-server tailscale status
-Note: Use this IP to point your remote Zabbix Proxies to this server.
+## **Post-Installation**
 
-Post-Installation
-SSL Configuration (Nginx Proxy Manager)
-Access the NPM Web UI at http://your-server-ip:81.
+### **SSL Configuration (Nginx Proxy Manager)**
 
-Default credentials: admin@example.com / changeme.
+1. Access NPM Web UI (http://your-server-ip:81).  
+2. Create a **Proxy Host**:  
+   * **Forward Hostname**: zabbix-web  
+   * **Forward Port**: 8080  
+3. Enable **SSL**.
 
-Create a Proxy Host:
+### **Zabbix Setup**
 
-Domain Names: zabbix.yourdomain.com
-
-Forward Hostname: zabbix-web
-
-Forward Port: 8080
-
-Enable SSL (Let's Encrypt) for secure access.
-
-Zabbix Web Setup
-Open your domain in a browser.
-
-Follow the Zabbix setup wizard.
-
-For Database connection, use:
-
-Database type: PostgreSQL
-
-Database host: zabbix-db
-
-User/Password: As defined in your .env.
-
-Troubleshooting
-Database Errors: Check logs with docker compose logs zabbix-db.
-
-Tailscale Issues: Ensure /dev/net/tun is available on the host (especially on Proxmox LXC/VM).
-
-Permissions: If data isn't saving, re-run chmod -R 777 ./data/db.
+1. Open your domain in a browser.  
+2. Database connection (use internal Docker network):  
+   * **Database host**: zabbix-db  
+   * **User/Password**: From your .env.
