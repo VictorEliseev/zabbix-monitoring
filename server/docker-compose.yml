@@ -1,11 +1,15 @@
 services:
-  # --- База данных (TimescaleDB для высокой производительности) ---
+  # --- DATABASE / БАЗА ДАНИХ (TimescaleDB) ---
+  # TimescaleDB provides high performance for time-series data
+  # TimescaleDB забезпечує високу продуктивність для часових рядів
   zabbix-db:
     image: timescale/timescaledb:latest-pg16
     container_name: zabbix-db
     restart: always
     volumes:
       - ./data/db:/var/lib/postgresql/data:rw
+      # Add this line to initialize the extension / Додаємо для ініціалізації
+      - ./init_timescaledb.sql:/docker-entrypoint-initdb.d/init_timescaledb.sql:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
@@ -16,13 +20,34 @@ services:
     env_file:
       - .env
 
-  # --- Ядро Zabbix Server ---
+  # --- TAILSCALE GATEWAY / ШЛЮЗ TAILSCALE ---
+  # Entry point for branch proxies via secure tunnel
+  # Точка входу для проксі філій через захищений тунель
+  ts-server:
+    image: tailscale/tailscale:latest
+    container_name: ts-server
+    hostname: ${TS_HOSTNAME_SERVER}
+    restart: always
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ./data/tailscale:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+  # --- ZABBIX SERVER / ЯДРО СЕРВЕРА ZABBIX ---
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
     container_name: zabbix-server
     restart: always
-    ports:
-      - "10051:10051"
+    # Connects to the server network via Tailscale tunnel
+    # Підключається до мережі через тунель Tailscale
+    network_mode: "service:ts-server"
     volumes:
       - ./data/zbx_env/alertscripts:/usr/lib/zabbix/alertscripts:ro
       - /etc/localtime:/etc/localtime:ro
@@ -39,8 +64,9 @@ services:
       - .env
     depends_on:
       - zabbix-db
+      - ts-server
 
-  # --- Веб-интерфейс (доступ через NPM) ---
+  # --- WEB INTERFACE / ВЕБ-ІНТЕРФЕЙС ZABBIX ---
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
     container_name: zabbix-web
@@ -64,7 +90,7 @@ services:
       - zabbix-db
       - zabbix-server
 
-  # --- Nginx Proxy Manager (SSL и точка входа) ---
+  # --- NGINX PROXY MANAGER (SSL & Reverse Proxy) ---
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: nginx-proxy
@@ -81,21 +107,24 @@ services:
     environment:
       - TZ=${TIMEZONE}
 
-  # --- Zabbix Agent (Мониторинг самого сервера) ---
+  # --- ZABBIX AGENT 2 (Self-Monitoring) ---
+  # Monitors the Cloud Server health
+  # Моніторить стан хмарного сервера
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest
-    container_name: zabbix-agent
+    image: zabbix/zabbix-agent2:alpine-7.0-latest
+    container_name: zabbix-agent-server
     restart: always
     privileged: true
     network_mode: host
     volumes:
-      - /proc:/host/proc
-      - /sys:/host/sys
-      - /:/host/rootfs:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/hostfs:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
-      - ZBX_HOSTNAME=${ZBX_HOSTNAME}
+      - ZBX_HOSTNAME=${ZBX_HOSTNAME_SERVER}
       - ZBX_SERVER_HOST=127.0.0.1
+      - ZBX_ROOT_FS=/hostfs
     env_file:
       - .env
