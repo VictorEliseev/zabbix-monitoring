@@ -1,0 +1,90 @@
+services:
+  # --- ТУНЕЛЬ TAILSCALE ---
+  # Забезпечує зв'язок між філією та хмарним сервером провайдера.
+  ts-gateway:
+    image: tailscale/tailscale:latest
+    container_name: ts-gateway
+    # Унікальне ім'я пристрою в Tailscale (kyiv-office-lab3).
+    hostname: ${TS_HOSTNAME}
+    restart: always
+    environment:
+      # Ключ авторизації для входу в мережу Tailscale.
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      # Директорія для зберігання стану та ключів сесії.
+      - TS_STATE_DIR=/var/lib/tailscale
+      # Локальні підмережі філії, які будуть доступні з хмари.
+      - TS_ROUTES=${TS_ROUTES}
+      # В PROXMOX використовуємо режим ядра (false) для швидкості.
+      - TS_USERSPACE=false
+      # Вимикаємо SNAT (щоб бачити реальні IP) та підміну DNS.
+      - TS_EXTRA_ARGS=--snat-subnet-routes=false --accept-dns=false
+    volumes:
+      # Постійне сховище налаштувань Tailscale на диску сервера.
+      - ${PATH_TS_STATE}:/var/lib/tailscale
+      # Прокидаємо TUN пристрій з ядра Ubuntu в контейнер.
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN    # Дозвіл на керування мережевими маршрутами.
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      # Порт для прийому SNMP-ловушок від обладнання в філії (UDP 162).
+      - "162:162/udp"
+
+  # --- ZABBIX PROXY ---
+  # Збирає дані в філії та відправляє їх на Zabbix Server у хмару.
+  zbx-proxy-branch:
+    image: zabbix/zabbix-proxy-sqlite3:ubuntu-7.0-latest
+    container_name: zbx-proxy-branch
+    restart: always
+    # Запуск від root потрібен для коректної роботи зі скриптами та логами.
+    user: root
+    # Весь трафік контейнера йде через тунель Tailscale.
+    network_mode: "service:ts-gateway"
+    depends_on:
+      - ts-gateway
+    environment:
+      # Ім'я прокси у веб-інтерфейсі Zabbix (Proxy-Kyiv-Lab3).
+      - ZBX_HOSTNAME=${PROXY_HOSTNAME}
+      # IP-адреса хмарного Zabbix-сервера (100.99.7.35).
+      - ZBX_SERVER_HOST=${ZBX_SERVER_IP}
+      # Активний режим (0): проксі сам ініціює з'єднання з сервером.
+      - ZBX_PROXYMODE=0
+      # Шлях до бази даних SQLite всередині контейнера.
+      - ZBX_DBNAME=/var/lib/zabbix/db/zabbix_proxy.sqlite3
+      # Налаштування обробника SNMP ловушок.
+      - ZBX_STARTSNMPTRAPPER=1
+      - ZBX_ENABLE_SNMP_TRAPS=true
+      # Файл, який проксі моніторить на наявність нових трапів.
+      - ZBX_SNMPTRAPPERFILE=/var/lib/zabbix/snmptraps/snmptraps.log
+    volumes:
+      # Прокидаємо налаштування SNMP для розпізнавання імен OID
+      - ./snmp.conf:/etc/snmp/snmp.conf:ro
+      # Основна папка з MIB-файлами (базові модулі)
+      - ${PATH_MIBS}:/usr/share/snmp/mibs:ro
+      # Додаткові модулі IANA та IETF (необхідні для Canon/Ricoh та мережевих стеків)
+      - ${PATH_MIBS}/iana:/var/lib/mibs/iana:ro
+      - ${PATH_MIBS}/ietf:/var/lib/mibs/ietf:ro
+      # Спільна папка для логів трапів (колектор пише, проксі читає)
+      - ${PATH_SNMPTRAPS}:/var/lib/zabbix/snmptraps:rw
+      # Місце зберігання бази даних проксі (SQLite) на хості
+      - ${PATH_ZABBIX_DB}:/var/lib/zabbix/db:rw
+      # Конфіг ротації та скрипт запуску (для SNMP трапів)
+      - ./logrotate.conf:/etc/logrotate.d/zabbix-traps:ro
+      - ./rotate-tick.sh:/etc/periodic/daily/logrotate:ro
+
+
+  # --- SNMP TRAP COLLECTOR ---
+  # Легкий контейнер, що приймає трапи з мережі та записує їх у файл.
+  trap-collector:
+    image: alpine:latest
+    container_name: trap-collector
+    restart: always
+    network_mode: "service:ts-gateway"
+    entrypoint: /bin/sh /trap_run.sh
+    volumes:
+      # Скрипт-обробник трапів.
+      - ./trap_run.sh:/trap_run.sh:ro
+      - ${PATH_SNMPTRAPS}:/var/lib/zabbix/snmptraps:rw
+    depends_on:
+      - ts-gateway
