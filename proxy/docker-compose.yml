@@ -88,3 +88,33 @@ services:
       - ${PATH_SNMPTRAPS}:/var/lib/zabbix/snmptraps:rw
     depends_on:
       - ts-gateway
+
+  # --- ZABBIX AGENT ---
+  # Легкий агент на базі Alpine для моніторингу заліза сервера (Тайпринт).
+  zabbix-agent:
+    image: zabbix/zabbix-agent2:alpine-7.0-latest
+    container_name: zabbix-agent-tailscale
+    restart: always
+    privileged: true
+    # Підключаємо до мережі Tailscale через шлюз
+    network_mode: "service:ts-gateway"
+    environment:
+      # Має збігатися з Hostname у веб-інтерфейсі Zabbix
+      - ZBX_HOSTNAME=${AGENT_HOSTNAME} 
+      # IP вашого хмарного Zabbix-сервера в мережі Tailscale
+      - ZBX_SERVER_HOST=${ZBX_SERVER_IP}
+      # Дозволяємо пасивні перевірки (якщо сервер сам опитує агент)
+      - ZBX_PASSIVE_ALLOW=true
+      # Вказуємо агенту корінь системи для моніторингу дисків хоста
+      - ZBX_ROOT_FS=/hostfs
+    volumes:
+      # Прокидаємо системні ресурси хоста в контейнер
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
+      # Для моніторингу дискового простору самого сервера
+      - /:/hostfs:ro
+      # Для доступу до docker.sock (якщо захочеш моніторити статус інших контейнерів)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - ts-gateway
