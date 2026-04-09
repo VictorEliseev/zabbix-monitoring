@@ -7,13 +7,13 @@
 ---
 
 ### Project Overview / Огляд проекту
-This repository provides automated templates for deploying a hybrid Zabbix monitoring ecosystem using Docker and Tailscale. It supports both central server management and remote branch monitoring via proxies.
-Цей репозиторій містить автоматизовані шаблони для розгортання гібридної екосистеми моніторингу Zabbix за допомогою Docker та Tailscale. Підтримується як керування центральним сервером, так і моніторинг віддалених філій через проксі.
+Automated templates for deploying a hybrid Zabbix monitoring ecosystem using Docker and Tailscale. Supports centralized server management and remote branch monitoring via proxies.
+Автоматизовані шаблони для розгортання гібридної екосистеми моніторингу Zabbix за допомогою Docker та Tailscale. Підтримується централізоване керування сервером та моніторинг віддалених філій через проксі.
 
-### Architecture / Архітектура
-* **Main Branch**: Infrastructure templates and global documentation. / **Гілка Main**: Шаблони інфраструктури та глобальна документація.
-* **Server Node**: Centralized Zabbix Server, Database, and Web Interface. / **Серверний вузол**: Централізований сервер Zabbix, база даних та веб-інтерфейс.
-* **Proxy Node**: Remote collector for branch monitoring with SNMP Traps support. / **Проксі-вузол**: Віддалений колектор для моніторингу філій із підтримкою SNMP-трапів.
+### Key Features / Ключові особливості
+* **Infrastructure as Code (IaC)**: Full automation through Docker Compose and standardized Shell scripts. / Повна автоматизація через Docker Compose та стандартизовані Shell-скрипти.
+* **Multilanguage Support**: All documentation and system comments are provided in both English and Ukrainian. / Мультимовна підтримка: вся документація та системні коментарі надаються англійською та українською мовами.
+* **Hybrid Connectivity**: Seamless integration of remote locations using Tailscale VPN tunnel. / Гібридне підключення: безшовна інтеграція віддалених локацій через VPN-тунель Tailscale.
 
 ---
 
@@ -21,12 +21,12 @@ This repository provides automated templates for deploying a hybrid Zabbix monit
 
 | Role / Роль | English 🇬🇧 | Українська 🇺🇦 |
 | :--- | :---: | :---: |
-| **Server Setup** (Центральний вузол) | [Read](docs/server/en/setup.md) | [Читати](docs/server/ua/setup.md) |
+| **Server Setup** (Центральний вузол) | [Read](docs/server/en/server_setup.md) | [Читати](docs/server/ua/server_setup.md) |
 | **Proxy Setup** (Віддалений проксі) | [Read](docs/proxy/en/proxy_setup.md) | [Читати](docs/proxy/ua/proxy_setup.md) |
 
 ---
 
 ### Quick Start / Швидкий старт
-1. **Configure environment**: Copy `.env.example` to `.env` and fill in your credentials. [cite_start]/ **Налаштуйте середовище**: Скопіюйте `.env.example` у `.env` та впишіть ваші дані. [cite: 1]
-2. **Deploy Proxy**: Run `./proxy/deploy_proxy.sh` to initialize the branch node. / **Розгорніть проксі**: Запустіть `./proxy/deploy_proxy.sh` для ініціалізації вузла філії.
-3. **Deploy Server**: Use the deployment script in the `/server` directory. / **Розгорніть сервер**: Використовуйте скрипт розгортання в директорії `/server`.
+1. **Configure environment**: Copy `.env.example` to `.env` and fill in your credentials. / **Налаштуйте середовище**: Скопіюйте `.env.example` у `.env` та впишіть ваші дані.
+2. **Deploy Proxy**: Run `./proxy/deploy_proxy.sh` to initialize the branch node. [cite_start]/ **Розгорніть проксі**: Запустіть `./proxy/deploy_proxy.sh` для ініціалізації вузла філії. [cite: 1]
+3. **Deploy Server**: Utilize templates in the `server/` directory for central node setup. / **Розгорніть сервер**: Використовуйте шаблони в директорії `server/` для налаштування центрального вузла.
