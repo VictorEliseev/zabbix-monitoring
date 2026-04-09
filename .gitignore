@@ -1,28 +1,43 @@
-# Секреты
+# --- SECRETS & ENVIRONMENT / СЕКРЕТИ ТА СЕРЕДОВИЩЕ ---
+# Never commit actual credentials 
+# Ніколи не додавайте реальні облікові дані 
 **/.env
 **/.env.*
 !**/.env.example
 
-# Базы данных и данные контейнеров
+# --- DATABASE & CONTAINER DATA / БАЗИ ДАНИХ ТА ДАНІ КОНТЕЙНЕРІВ ---
+# Ignore local database files and persistent volumes 
+# Ігнорувати локальні файли баз даних та постійні томи 
 **/zabbix/db/
 **/zabbix_proxy_db/
+**/zabbix_db/
 **/postgres/data/
 **/mysql/data/
+**/tailscale_state/
 
-# Nginx & Proxy Manager
+# --- INFRASTRUCTURE DATA / ДАНІ ІНФРАСТРУКТУРИ ---
+# Ignore Nginx and Proxy Manager internal data 
+# Ігнорувати внутрішні дані Nginx та Proxy Manager 
 **/nginx-proxy/data/
 **/nginx-proxy/letsencrypt/
 
-# Специфично для Zabbix (сессии и конфиги)
+# --- ZABBIX SPECIFIC / СПЕЦИФІКА ZABBIX ---
+# Web sessions and local configs 
+# Веб-сесії та локальні конфіги 
 **/zabbix/web/
 **/zabbix/etc/
+**/snmptraps/*.log
 
-# Логи и временные файлы
+# --- LOGS & TEMPORARY FILES / ЛОГИ ТА ТИМЧАСОВІ ФАЙЛИ ---
+# Standard log files and temp directories 
+# Стандартні лог-файли та тимчасові директорії 
 *.log
 **/logs/
 tmp/
 
-# Системный мусор и редакторы
+# --- SYSTEM & IDE JUNK / СИСТЕМНЕ СМІТТЯ ТА РЕДАКТОРИ ---
+# OS generated files and editor-specific configs 
+# Файли, згенеровані ОС, та конфіги редакторів 
 .DS_Store
 Thumbs.db
 .vscode/

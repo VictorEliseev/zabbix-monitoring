@@ -2,29 +2,31 @@
 
 ![Zabbix](https://img.shields.io/badge/Zabbix-7.0-blue?style=flat-square&logo=zabbix&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?style=flat-square&logo=ubuntu&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-
-
-| Branch | Role | Status |
-| :--- | :--- | :--- |
-| `main` | Templates & Docs | ![Stable](https://img.shields.io/badge/status-stable-brightgreen) |
-| `server` | Central Zabbix Node | ![Ready](https://img.shields.io/badge/deploy-ready-blue) |
-| `proxy` | Remote Proxy Node | ![Ready](https://img.shields.io/badge/deploy-ready-blue) |
+![Tailscale](https://img.shields.io/badge/Tailscale-Secure-informational?style=flat-square&logo=tailscale)
 
 ---
 
-### Описание проекта
-Этот репозиторий содержит шаблоны для быстрого развертывания системы мониторинга Zabbix...
+### Project Overview / Огляд проекту
+This repository provides automated templates for deploying a hybrid Zabbix monitoring ecosystem using Docker and Tailscale. It supports both central server management and remote branch monitoring via proxies.
+Цей репозиторій містить автоматизовані шаблони для розгортання гібридної екосистеми моніторингу Zabbix за допомогою Docker та Tailscale. Підтримується як керування центральним сервером, так і моніторинг віддалених філій через проксі.
 
+### Architecture / Архітектура
+* **Main Branch**: Infrastructure templates and global documentation. / **Гілка Main**: Шаблони інфраструктури та глобальна документація.
+* **Server Node**: Centralized Zabbix Server, Database, and Web Interface. / **Серверний вузол**: Централізований сервер Zabbix, база даних та веб-інтерфейс.
+* **Proxy Node**: Remote collector for branch monitoring with SNMP Traps support. / **Проксі-вузол**: Віддалений колектор для моніторингу філій із підтримкою SNMP-трапів.
 
-Zabbix monitoring
-Used technologies
-Docker, Tailscail
+---
 
-### Документация / Документація
+### Documentation / Документація
 
-| Роль / Роль | Українська 🇺🇦 | Русский 🇷🇺 |
+| Role / Роль | English 🇬🇧 | Українська 🇺🇦 |
 | :--- | :---: | :---: |
-| **Server Node** (Центральный узел) | [Читати](docs/server/setup_ua.md) | [Читать](docs/server/setup_ru.md) |
-| **Remote Proxy** (Удаленный агент) | [Читати](docs/proxy/setup_ua.md) | [Читать](docs/proxy/setup_ru.md) |
+| **Server Setup** (Центральний вузол) | [Read](docs/server/en/setup.md) | [Читати](docs/server/ua/setup.md) |
+| **Proxy Setup** (Віддалений проксі) | [Read](docs/proxy/en/proxy_setup.md) | [Читати](docs/proxy/ua/proxy_setup.md) |
+
+---
+
+### Quick Start / Швидкий старт
+1. **Configure environment**: Copy `.env.example` to `.env` and fill in your credentials. [cite_start]/ **Налаштуйте середовище**: Скопіюйте `.env.example` у `.env` та впишіть ваші дані. [cite: 1]
+2. **Deploy Proxy**: Run `./proxy/deploy_proxy.sh` to initialize the branch node. / **Розгорніть проксі**: Запустіть `./proxy/deploy_proxy.sh` для ініціалізації вузла філії.
+3. **Deploy Server**: Use the deployment script in the `/server` directory. / **Розгорніть сервер**: Використовуйте скрипт розгортання в директорії `/server`.
