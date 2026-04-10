@@ -107,24 +107,28 @@ services:
     environment:
       - TZ=${TIMEZONE}
 
-  # --- ZABBIX AGENT 2 (Self-Monitoring) ---
-  # Monitors the Cloud Server health
-  # Моніторить стан хмарного сервера
+  # --- ZABBIX AGENT (Self-Monitoring) / ZABBIX АГЕНТ (Самомоніторинг) ---
+  # Monitors the Cloud Server health using the classic agent for stability
+  # Моніторить стан хмарного сервера за допомогою класичного агента для стабільності
   zabbix-agent:
-    image: zabbix/zabbix-agent2:alpine-7.0-latest
-    container_name: zabbix-agent-server
+    image: zabbix/zabbix-agent:alpine-7.0-latest
+    container_name: zabbix-agent
     restart: always
     privileged: true
-    network_mode: host
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /:/hostfs:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:
+      # Hostname must strictly match the name in Zabbix Web UI
+      # Ім'я хоста має суворо збігатися з ім'ям у веб-інтерфейсі Zabbix
       - ZBX_HOSTNAME=${ZBX_HOSTNAME_SERVER}
-      - ZBX_SERVER_HOST=127.0.0.1
-      - ZBX_ROOT_FS=/hostfs
+      # Allowed server addresses for passive checks
+      # Дозволені адреси сервера для пасивних перевірок
+      - ZBX_SERVER_HOST=zabbix-server,172.17.0.1,127.0.0.1
     env_file:
       - .env
+    depends_on:
+      - zabbix-server
