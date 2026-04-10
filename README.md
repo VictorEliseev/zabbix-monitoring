@@ -17,6 +17,17 @@ Automated templates for deploying a hybrid Zabbix monitoring ecosystem using Doc
 
 ---
 
+### ⚠️ Critical Tailscale Setup / Важливі налаштування Tailscale
+
+To ensure stable connectivity, follow these manual steps in the [Tailscale Admin Console](https://login.tailscale.com/admin/machines):
+Для забезпечення стабільного зв'язку виконайте ці кроки в адмін-панелі Tailscale:
+
+1. **Server Auth**: After the first run, check `docker logs tailscale-node` for the login URL to authorize the main server. / **Авторизація сервера**: Після першого запуску перевірте логи контейнера для отримання посилання на авторизацію.
+2. **Disable Key Expiry**: For both Server and Proxy nodes, select **"Disable Key Expiry"** to prevent connection drops every 180 days. / **Вимкнення експірації**: Для сервера та проксі вимкніть термін дії ключів, щоб уникнути розриву зв'язку через 180 днів.
+3. **Approve Subnet Routes**: For remote proxies, go to **Edit Route Settings** and manually approve the advertised local subnets (e.g., 192.168.x.x) to allow Zabbix to see the branch hardware. / **Підтвердження маршрутів**: Для проксі вручну підтвердіть маршрути (Subnet Routes) в адмінці, щоб Zabbix бачив залізо у філіях.
+
+---
+
 ### Documentation / Документація
 
 | Role / Роль | English 🇬🇧 | Українська 🇺🇦 |
@@ -28,5 +39,5 @@ Automated templates for deploying a hybrid Zabbix monitoring ecosystem using Doc
 
 ### Quick Start / Швидкий старт
 1. **Configure environment**: Copy `.env.example` to `.env` and fill in your credentials. / **Налаштуйте середовище**: Скопіюйте `.env.example` у `.env` та впишіть ваші дані.
-2. **Deploy Proxy**: Run `./proxy/deploy_proxy.sh` to initialize the branch node. [cite_start]/ **Розгорніть проксі**: Запустіть `./proxy/deploy_proxy.sh` для ініціалізації вузла філії. [cite: 1]
+2. **Deploy Proxy**: Run `./proxy/deploy_proxy.sh` to initialize the branch node. / **Розгорніть проксі**: Запустіть `./proxy/deploy_proxy.sh` для ініціалізації вузла філії.
 3. **Deploy Server**: Utilize templates in the `server/` directory for central node setup. / **Розгорніть сервер**: Використовуйте шаблони в директорії `server/` для налаштування центрального вузла.
