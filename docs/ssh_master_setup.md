@@ -16,7 +16,7 @@ To keep the monitoring organized, we use the following pattern:
 ## SSH Setup / Налаштування SSH
 
 ### 1. Key Generation / Генерація ключів
-Use Ed25519 for better security:
+Use Ed25519 for better security (standard RSA 4096 is also fine):
 ```bash
 ssh-keygen -t ed25519 -C "admin@monitoring"
 ```

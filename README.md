@@ -14,8 +14,8 @@ Automated templates for deploying a hybrid Zabbix monitoring ecosystem using Doc
 
 ### Troubleshooting & Stability / Усунення несправностей
 
-* **Agent Version**: Use Zabbix Agent (v1) for Docker environments. Avoid Agent 2 to prevent initialization errors. / Використовуйте Zabbix Agent (v1). Уникайте Agent 2.
-* **Hostname Sync**: `ZBX_HOSTNAME_SERVER` in `.env` must strictly match the "Host name" in Zabbix Web UI. / Значення у `.env` має збігатися з ім'ям хоста в інтерфейсі.
+* **Agent Version**: **Use Zabbix Agent (v1)** for Docker environments. Agent 2 is excluded to prevent `enc_internal` initialization errors. / Використовуйте **Zabbix Agent (v1)**. Agent 2 виключено для запобігання помилок ініціалізації.
+* **Hostname Sync**: `ZBX_HOSTNAME_SERVER` in `.env` must strictly match the "Host name" in Zabbix Web UI. / Значення у `.env` має суворо збігатися з ім'ям хоста в інтерфейсе.
 * **Internal Connectivity**: Use DNS name `zabbix-agent` and port `10050` for local monitoring. / Для локального моніторингу використовуйте DNS-ім'я `zabbix-agent`.
 
 ---
