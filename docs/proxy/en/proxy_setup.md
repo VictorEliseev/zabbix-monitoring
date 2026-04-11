@@ -1,43 +1,42 @@
-# **Zabbix Proxy Deployment Guide (Active Mode)**
+# Zabbix Proxy Setup Guide
 
-This guide describes the deployment of Zabbix Proxy version 7.0 LTS using Docker.
+This guide provides a step-by-step walkthrough for deploying a Zabbix Proxy in Active Mode using Docker and SQLite3.
 
-## **Overview**
+---
 
-Zabbix Proxy is a process that collects monitoring data from one or more monitored devices and sends the information to the Zabbix server. It requires a local database (SQLite3 is used in this setup).
+## 1. Environment Configuration
 
-## **Docker Configuration**
+Create a `.env` file in your working directory to store the core parameters.
 
-We use the Alpine Linux-based image for minimal footprint and maximum security.
+```bash
+# The unique name of the proxy as it will appear in Zabbix Web UI
+ZBX_HOSTNAME=Proxy-Remote-Office
+ZBX_SERVER_HOST=100.x.x.x # Your Zabbix Server Tailscale IP
+ZBX_PROXYMODE=0 # 0 for Active, 1 for Passive
+```
 
-### **Key Environment Variables (.env):**
+## 2. Docker Compose File
 
-* ZBX\_HOSTNAME: A unique, case-sensitive name for the proxy (e.g., Branch-Office-Proxy).  
-* ZBX\_SERVER\_HOST: The Tailscale (or VPN) IP address of your Zabbix Server.  
-* ZBX\_PROXYMODE: 0 (Active mode — default).  
-* ZBX\_SERVER\_PORT: 10051 (Default port).
+Create a `docker-compose.yml` file with the following content:
 
-## **Deployment Steps**
+```yaml
+version: '3.5'
+services:
+  zabbix-proxy:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-7.0-latest
+    restart: always
+    ports:
+      - "10051:10051"
+    env_file:
+      - .env
+    volumes:
+      - ./zbx_proxy_db:/var/lib/zabbix/db
+```
 
-1. **Environment Preparation**:  
-   Ensure Tailscale is connected and you can ping the Zabbix Server's internal IP.  
-   cd proxy/  
-   cp .env.example .env
+## 3. Deployment
 
-2. **Start the Proxy**:  
-   docker-compose up \-d
+Run the following command to start the proxy:
 
-3. **Verify Connection**:  
-   Check the container logs to ensure the proxy successfully connects to the server:  
-   docker logs \-f zabbix-proxy
-
-## **Zabbix Server Configuration**
-
-1. Log in to the Zabbix Web Interface.  
-2. Go to **Administration** \-\> **Proxies**.  
-3. Click **Create proxy**.  
-4. **Proxy name**: Must be EXACTLY the same as ZBX\_HOSTNAME.  
-5. **Proxy mode**: Active.  
-6. Click **Add**.
-
-Wait for 1-2 minutes. The **Last seen (age)** column should show a value once the proxy checks in.
+```bash
+docker-compose up -d
+```

@@ -8,15 +8,10 @@ services:
     hostname: ${TS_HOSTNAME}
     restart: always
     environment:
-      # Tailscale Auth Key / Ключ авторизації Tailscale.
       - TS_AUTHKEY=${TS_AUTHKEY}
-      # Network state storage directory / Директорія зберігання стану мережі.
       - TS_STATE_DIR=/var/lib/tailscale
-      # Local subnet routing / Маршрутизація локальних підмереж.
       - TS_ROUTES=${TS_ROUTES}
-      # Kernel mode for performance / Режим ядра для швидкодії.
       - TS_USERSPACE=false
-      # Additional network arguments / Додаткові аргументи мережі.
       - TS_EXTRA_ARGS=--snat-subnet-routes=false --accept-dns=false
     volumes:
       - ${PATH_TS_STATE}:/var/lib/tailscale
@@ -29,44 +24,39 @@ services:
       # Port for SNMP traps (UDP 162) / Порт для SNMP-трапів (UDP 162).
       - "162:162/udp"
 
-  # --- ZABBIX PROXY (ALPINE) / ZABBIX ПРОКСІ (ALPINE) ---
-  # Collects data in the branch and sends it to the central Zabbix Server.
-  # Збирає дані у філії та відправляє їх на центральний Zabbix Server.
-  zbx-proxy-branch:
-    image: zabbix/zabbix-proxy-sqlite3:alpine-7.0-latest
-    container_name: zbx-proxy-branch
+  # --- PROXY DATABASE VOLUME / ТОМ БАЗИ ДАНИХ ПРОКСІ ---
+  # Ensures correct permissions for SQLite database file.
+  # Забезпечує коректні права доступу для файлу бази даних SQLite.
+  zabbix-proxy-db:
+    image: alpine:latest
+    container_name: zabbix-proxy-db
     restart: always
-    # Root privileges for scripts and logs execution / Права root для роботи зі скриптами та логами.
-    user: root
-    # All container traffic goes through the Tailscale tunnel / Весь трафік контейнера йде через тунель Tailscale.
+    command: ["/bin/sh", "-c", "mkdir -p /var/lib/zabbix && chown -R 199:199 /var/lib/zabbix && tail -f /dev/null"]
+    volumes:
+      - ${PATH_ZBX_DB}:/var/lib/zabbix:rw
+
+  # --- ZABBIX PROXY (SQLite3) / ZABBIX ПРОКСІ (SQLite3) ---
+  # Collects data from the local network and sends it to the main server.
+  # Збирає дані з локальної мережі та відправляє їх на основний сервер.
+  zabbix-proxy:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-7.0-latest
+    container_name: zabbix-proxy
+    restart: always
     network_mode: "service:ts-gateway"
     depends_on:
       - ts-gateway
+      - zabbix-proxy-db
     environment:
-      # Proxy name in Zabbix Web UI / Назва проксі у веб-інтерфейсі Zabbix.
-      - ZBX_HOSTNAME=${PROXY_HOSTNAME}
-      # Cloud Zabbix Server IP in Tailscale network / IP хмарного Zabbix-сервера в мережі Tailscale.
-      - ZBX_SERVER_HOST=${ZBX_SERVER_IP}
-      # Active mode (0): proxy initiates connection to the server / Активний режим (0): проксі сам ініціює з'єднання.
-      - ZBX_PROXYMODE=0
-      # Path to SQLite database inside container / Шлях до бази даних SQLite всередині контейнера.
-      - ZBX_DBNAME=/var/lib/zabbix/db/zabbix_proxy.sqlite3
-      # SNMP Traps handler configuration / Налаштування обробника SNMP-трапів.
-      - ZBX_STARTSNMPTRAPPER=1
-      - ZBX_ENABLE_SNMP_TRAPS=true
-      - ZBX_SNMPTRAPPERFILE=/var/lib/zabbix/snmptraps/snmptraps.log
+      - ZBX_HOSTNAME=${ZBX_PROXY_NAME}
+      - ZBX_SERVER_HOST=${ZBX_SERVER_HOST}
+      - ZBX_DB_FILE=/var/lib/zabbix/zabbix_proxy.db
+      - ZBX_ENABLERSNMPTRAPS=true
+      - TZ=${TIMEZONE}
     volumes:
-      # SNMP configuration and MIB files / Конфігурація SNMP та MIB-файли.
-      - ./snmp.conf:/etc/snmp/snmp.conf:ro
-      - ${PATH_MIBS}:/usr/share/snmp/mibs:ro
-      - ${PATH_MIBS}/iana:/var/lib/mibs/iana:ro
-      - ${PATH_MIBS}/ietf:/var/lib/mibs/ietf:ro
-      # Shared folder for trap logs and SQLite DB / Спільна папка для логів трапів та БД SQLite.
-      - ${PATH_SNMPTRAPS}:/var/lib/zabbix/snmptraps:rw
-      - ${PATH_ZABBIX_DB}:/var/lib/zabbix/db:rw
-      # Log rotation and startup scripts / Конфіг ротації та скрипти запуску.
-      - ./logrotate.conf:/etc/logrotate.d/zabbix-traps:ro
-      - ./rotate-tick.sh:/etc/periodic/daily/logrotate:ro
+      - ${PATH_ZBX_DB}:/var/lib/zabbix:rw
+      - ${PATH_SNMPTRAPS}:/var/lib/zabbix/snmptraps:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   # --- SNMP TRAP COLLECTOR / КОЛЕКТОР SNMP-ТРАПІВ ---
   # Receives traps from the network and writes them to a log file.
@@ -83,26 +73,25 @@ services:
     depends_on:
       - ts-gateway
 
-  # --- ZABBIX AGENT 2 / ZABBIX АГЕНТ 2 ---
-  # Monitors local host hardware and system resources.
-  # Моніторинг апаратних та системних ресурсів локального хоста.
+  # --- ZABBIX AGENT (V1) / ZABBIX АГЕНТ (V1) ---
+  # Monitors local host hardware and system resources using classic agent.
+  # Моніторинг апаратних та системних ресурсів локального хоста через класичний агент.
   zabbix-agent:
-    image: zabbix/zabbix-agent2:alpine-7.0-latest
-    container_name: zabbix-agent-tailscale
+    image: zabbix/zabbix-agent:alpine-7.0-latest
+    container_name: zabbix-agent-proxy
     restart: always
     privileged: true
     network_mode: "service:ts-gateway"
-    environment:
-      # Must match the Hostname in Zabbix Web UI / Має збігатися з Hostname у веб-інтерфейсі.
-      - ZBX_HOSTNAME=${AGENT_HOSTNAME} 
-      - ZBX_SERVER_HOST=${ZBX_SERVER_IP}
-      - ZBX_PASSIVE_ALLOW=true
-      - ZBX_ROOT_FS=/hostfs
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /dev:/host/dev:ro
-      - /:/hostfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - ZBX_HOSTNAME=${ZBX_HOSTNAME_PROXY_NODE}
+      - ZBX_SERVER_HOST=${ZBX_AGENT_ALLOWED_SERVERS}
+      - ZBX_PASSIVESERVER=${ZBX_AGENT_ALLOWED_SERVERS}
+      - TZ=${TIMEZONE}
     depends_on:
       - ts-gateway
