@@ -12,7 +12,7 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_ROUTES=${TS_ROUTES}
       - TS_USERSPACE=false
-      - TS_EXTRA_ARGS=--snat-subnet-routes=false --accept-dns=false
+      - TS_EXTRA_ARGS=--snat-subnet-routes=false --accept-dns=false --ssh
     volumes:
       - ${PATH_TS_STATE}:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
