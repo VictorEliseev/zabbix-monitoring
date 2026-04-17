@@ -3,7 +3,8 @@ services:
   # Provides a secure connection between the branch and the cloud server.
   # Забезпечує захищений зв'язок між філією та хмарним сервером.
   ts-gateway:
-    image: tailscale/tailscale:latest
+    # Используем конкретную стабильную версию вместо latest для надежности и предсказуемости
+    image: tailscale/tailscale:v1.64.2
     container_name: ts-gateway
     hostname: ${TS_HOSTNAME}
     restart: always
@@ -28,7 +29,8 @@ services:
   # Ensures correct permissions for SQLite database file.
   # Забезпечує коректні права доступу для файлу бази даних SQLite.
   zabbix-proxy-db:
-    image: alpine:latest
+    # Используем стабильную версию Alpine для надежности и предсказуемости
+    image: alpine:3.19
     container_name: zabbix-proxy-db
     restart: always
     command: ["/bin/sh", "-c", "mkdir -p /var/lib/zabbix && chown -R 199:199 /var/lib/zabbix && tail -f /dev/null"]
@@ -39,7 +41,8 @@ services:
   # Collects data from the local network and sends it to the main server.
   # Збирає дані з локальної мережі та відправляє їх на основний сервер.
   zabbix-proxy:
-    image: zabbix/zabbix-proxy-sqlite3:alpine-7.0-latest
+    # # Фиксируем на 7.0.0
+    image: zzabbix/zabbix-proxy-sqlite3:alpine-7.0.0
     container_name: zabbix-proxy
     restart: always
     network_mode: "service:ts-gateway"
@@ -62,7 +65,8 @@ services:
   # Receives traps from the network and writes them to a log file.
   # Приймає трапи з мережі та записує їх у лог-файл.
   trap-collector:
-    image: alpine:latest
+    # Используем стабильную версию Alpine для надежности и предсказуемости
+    image: alpine:3.19
     container_name: trap-collector
     restart: always
     network_mode: "service:ts-gateway"
@@ -77,7 +81,8 @@ services:
   # Monitors local host hardware and system resources using classic agent.
   # Моніторинг апаратних та системних ресурсів локального хоста через класичний агент.
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest
+    # Фиксируем версию агента
+    image: zabbix/zabbix-agent:alpine-7.0.0
     container_name: zabbix-agent-proxy
     restart: always
     privileged: true

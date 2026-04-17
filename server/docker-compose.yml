@@ -3,7 +3,7 @@ services:
   # TimescaleDB provides high performance for time-series data
   # TimescaleDB забезпечує високу продуктивність для часових рядів
   zabbix-db:
-    image: timescale/timescaledb:latest-pg16
+    image: timescale/timescaledb:2.14.2-pg16
     container_name: zabbix-db
     restart: always
     volumes:
@@ -24,7 +24,7 @@ services:
   # Entry point for branch proxies via secure tunnel
   # Точка входу для проксі філій через захищений тунель
   ts-server:
-    image: tailscale/tailscale:latest
+    image: tailscale/tailscale:v1.64.2
     container_name: ts-server
     hostname: ${TS_HOSTNAME_SERVER}
     restart: always
@@ -43,7 +43,7 @@ services:
 
   # --- ZABBIX SERVER / ЯДРО СЕРВЕРА ZABBIX ---
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    image: zabbix/zabbix-server-pgsql:alpine-7.0.0
     container_name: zabbix-server
     restart: always
     # Connects to the server network via Tailscale tunnel
@@ -69,7 +69,7 @@ services:
 
   # --- WEB INTERFACE / ВЕБ-ІНТЕРФЕЙС ZABBIX ---
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0.0
     container_name: zabbix-web
     restart: always
     expose:
@@ -93,7 +93,7 @@ services:
 
   # --- NGINX PROXY MANAGER (SSL & Reverse Proxy) ---
   nginx-proxy:
-    image: 'jc21/nginx-proxy-manager:latest'
+    image: 'jjc21/nginx-proxy-manager:2.11.1'
     container_name: nginx-proxy
     restart: always
     ports:
@@ -112,7 +112,7 @@ services:
   # Monitors the Cloud Server health using the classic agent for stability
   # Моніторить стан хмарного сервера за допомогою класичного агента для стабільності
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest
+    image: zabbix/zabbix-agent:alpine-7.0.0
     container_name: zabbix-agent
     restart: always
     privileged: true
