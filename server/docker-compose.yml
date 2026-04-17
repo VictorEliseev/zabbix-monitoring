@@ -93,7 +93,7 @@ services:
 
   # --- NGINX PROXY MANAGER (SSL & Reverse Proxy) ---
   nginx-proxy:
-    image: 'jjc21/nginx-proxy-manager:2.11.1'
+    image: 'jc21/nginx-proxy-manager:2.11.1'
     container_name: nginx-proxy
     restart: always
     ports:
